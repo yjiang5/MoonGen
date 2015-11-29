@@ -12,12 +12,14 @@ function master(txPorts, minIp, numIps, rate)
 	txPorts = tostring(txPorts)
 	minIp = minIp or "10.0.0.1"
 	numIps = numIps or 100
-	rate = rate or 0
+	rate = rate or nil
 	for currentTxPort in txPorts:gmatch("(%d+),?") do
 		currentTxPort = tonumber(currentTxPort) 
 		local txDev = device.config{ port = currentTxPort }
 		txDev:wait()
-		txDev:getTxQueue(0):setRate(rate)
+		if rate then
+			txDev:getTxQueue(0):setRate(rate)
+		end
 		dpdk.launchLua("loadSlave", currentTxPort, 0, minIp, numIps)
 	end
 	dpdk.waitForSlaves()

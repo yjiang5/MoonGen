@@ -8,16 +8,19 @@ local filter	= require "filter"
 local ffi	= require "ffi"
 
 function master(...)
-	local txPort, rate, cores = tonumberall(...)
-	if not txPort or not rate or not cores then
-		return print("usage: txPort rate cores")
+	local txPort, cores, rate = tonumberall(...)
+	if not txPort or not cores then
+		return print("usage: txPort cores [rate]")
 	end
+	rate = rate or nil
 	local rxMempool = memory.createMemPool()
 	local txDev
 	txDev = device.config(txPort, rxMempool, 1, cores)
 	txDev:wait()
 	for i = 0, cores - 1 do
-		txDev:getTxQueue(i):setRate(rate / cores)
+		if rate then
+			txDev:getTxQueue(i):setRate(rate / cores)
+		end
 		dpdk.launchLua("loadSlave", txPort, i)
 	end
 	dpdk.waitForSlaves()
@@ -27,7 +30,7 @@ function loadSlave(port, queue)
 	local core = queue
 	local queue = device.get(port):getTxQueue(queue)
 	local mem = memory.createMemPool(function(buf)
-		local data = ffi.cast("uint8_t*", buf.pkt.data)
+		local data = ffi.cast("uint8_t*", buf:getData())
 		-- src/dst mac
 		for i = 0, 11 do
 			data[i] = i
