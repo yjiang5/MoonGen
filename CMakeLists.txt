@@ -7,23 +7,22 @@ SET(CMAKE_EXE_LINKER_FLAGS "-rdynamic") # to access functions from luajit
 SET(PRJ MoonGen)
 
 SET(FILES
-	src/main.c
-	src/memory.c
-	src/task.c
-	src/device.c
-	src/util.c
-	src/lifecycle.c
-	src/timestamping.c
-  src/debug.c
-  src/bitmask.c
-  src/lpm_l.c
-  src/5tuple.c
-  src/distribute.c
-  src/barrier.cpp
-	src/task-results.cpp
-	src/pipe.cpp
-	src/lock.cpp
-	src/namespaces.cpp
+    src/main.c
+    src/memory.c
+    src/task.c
+    src/device.c
+    src/util.c
+    src/lifecycle.c src/timestamping.c
+    src/debug.c
+    src/bitmask.c
+    src/lpm_l.c
+    src/5tuple.c
+    src/distribute.c
+    src/barrier.cpp
+    src/task-results.cpp
+    src/pipe.cpp
+    src/lock.cpp
+    src/namespaces.cpp
 )
 
 SET(DPDK_LIBS

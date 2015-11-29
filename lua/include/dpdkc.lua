@@ -15,51 +15,88 @@ ffi.cdef[[
 	};
 
 	// packets/mbufs
-	struct rte_pktmbuf {
-		struct rte_mbuf* next;
-		void* data;
-		uint16_t data_len;
-		uint8_t nb_segs;
-		uint8_t in_port;
-		uint32_t pkt_len;
-		//union {
-		uint16_t header_lengths;
-		uint16_t vlan_tci;
-		//uint32_t value;
-		//} offsets;
-		union {
-			uint32_t rss;
-			struct {
-				uint16_t hash;
-				uint16_t id;
-			} fdir;
-			uint32_t sched;
-		} hash;
-	};
+	typedef void    *MARKER[0];
+	typedef uint8_t  MARKER8[0];
+	typedef uint64_t MARKER64[0];
 
-	union rte_ipsec {
-		uint32_t data;
-		//struct {
-		//	uint16_t sa_idx:10;
-		//	uint16_t esp_len:9;
-		//	uint8_t type:1;
-		//	uint8_t mode:1;
-		//	uint16_t unused:11; /**< These 11 bits are unused. */
-		//} sec;
-	};
-
+    struct rte_mbuf;
 	struct rte_mbuf {
-		void* pool;
-		void* data;
-		uint64_t phy_addr;
-		uint16_t len;
-		uint16_t refcnt;
-		uint8_t type;
-		uint8_t reserved;
-		uint16_t ol_flags;
-		struct rte_pktmbuf pkt;
-		union rte_ipsec ol_ipsec;
-	};
+		MARKER cacheline0;
+
+		void *buf_addr;           /**< Virtual address of segment buffer. */
+		void *buf_physaddr; /**< Physical address of segment buffer. */
+
+		uint16_t buf_len;         /**< Length of segment buffer. */
+
+		/* next 6 bytes are initialised on RX descriptor rearm */
+		MARKER8 rearm_data;
+		uint16_t data_off;
+
+		uint16_t refcnt;              /**< Non-atomically accessed refcnt */
+        uint8_t nb_segs;
+		uint8_t port;
+
+		uint64_t ol_flags;
+
+		/* remaining bytes are set on RX when pulling packet from descriptor */
+		MARKER rx_descriptor_fields1;
+
+		/**
+		 * The packet type, which is used to indicate ordinary packet and also
+		 * tunneled packet format, i.e. each number is represented a type of
+		 * packet.
+		 */
+		uint16_t packet_type;
+
+		uint16_t data_len;        /**< Amount of data in segment buffer. */
+		uint32_t pkt_len;         /**< Total pkt len: sum of all segments. */
+		uint16_t vlan_tci;        /**< VLAN Tag Control Identifier (CPU order) */
+		uint16_t vlan_tci_outer;  /**< Outer VLAN Tag Control Identifier (CPU order) */
+		union {
+			uint32_t rss;     /**< RSS hash result if RSS enabled */
+			struct {
+				union {
+					struct {
+						uint16_t hash;
+						uint16_t id;
+					};
+					uint32_t lo;
+					/**< Second 4 flexible bytes */
+				};
+				uint32_t hi;
+				/**< First 4 flexible bytes or FD ID, dependent on
+				     PKT_RX_FDIR_* flag in ol_flags. */
+			} fdir;           /**< Filter identifier if FDIR enabled */
+			uint32_t sched;   /**< Hierarchical scheduler */
+			uint32_t usr;	  /**< User defined tags. See rte_distributor_process() */
+		} hash;                   /**< hash information */
+
+		uint32_t seqn;
+
+		MARKER cacheline1 __attribute__((aligned(64)));
+
+		union {
+            void *userdata;   /**< Can be used for external metadata */
+            uint64_t udata64; /**< Allow 8-byte userdata on 32-bit */
+            uint32_t ol_ipsec /* TODO: this seems incorrect!!! */
+        };
+
+		struct rte_mempool *pool;
+		struct rte_mbuf *next;
+
+		/* fields to support TX offloads */
+        union {
+            uint64_t tx_offload;       /**< combined for easy fetch */
+            uint64_t header_lengths;
+        };
+
+        /** Size of the application private data. In case of an indirect
+         * mbuf, it stores the direct mbuf private data size. */
+        uint16_t priv_size;
+
+        /** Timesync flags for use with IEEE1588. */
+        uint16_t timesync;
+	} __rte_cache_aligned;
 
 	struct mempool {
 	}; // dummy struct, only needed to associate it with a metatable
@@ -87,13 +124,13 @@ ffi.cdef[[
 		int l4type;
 		int iptype;
 	};
+
 	enum rte_l4type {
 		RTE_FDIR_L4TYPE_NONE = 0,       /**< None. */
 		RTE_FDIR_L4TYPE_UDP,            /**< UDP. */
 		RTE_FDIR_L4TYPE_TCP,            /**< TCP. */
 		RTE_FDIR_L4TYPE_SCTP,           /**< SCTP. */
 	};
-
 
 	struct rte_fdir_masks {
 		uint8_t only_ip_flow;
@@ -109,7 +146,6 @@ ffi.cdef[[
 		uint16_t src_port_mask;
 		uint16_t dst_port_mask;
 	};
-
 
 	// statistics
 	struct rte_eth_stats {
@@ -204,6 +240,7 @@ ffi.cdef[[
 	void* get_eth_dev(int port);
 	void* get_i40e_dev(int port);
 	int get_i40e_vsi_seid(int port);
+	uint8_t get_i40e_pci_port(uint8_t port);
 	int rte_eth_dev_mac_addr_add(uint8_t port, void* mac, uint32_t pool);
 	int rte_eth_dev_mac_addr_remove(uint8_t port, void* mac);
 
