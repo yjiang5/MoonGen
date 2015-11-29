@@ -215,6 +215,9 @@ struct rte_eth_rss_reta_entry64 {
 
 int mg_rte_eth_dev_rss_reta_update (uint8_t port, struct rte_eth_rss_reta_entry64 *reta_conf, uint16_t reta_size);
 int rte_eth_dev_rss_reta_update (uint8_t port, struct rte_eth_rss_reta_entry64 *reta_conf, uint16_t reta_size);
+
+enum i40e_status_code i40e_aq_config_vsi_bw_limit(void *hw, uint16_t seid, uint16_t credit, uint8_t max_bw,
+	struct i40e_asq_cmd_details *cmd_details);
 ]]
 
 function dev:setRssNQueues(n)
@@ -618,6 +621,13 @@ function txQueue:getTxRate()
 	local rateDec = bit.band(reg, 0x3FF)
 	self.rate = (1 / (rateInt + rateDec / 2^14)) * self.speed
 	return self.rate
+end
+
+-- rate is multiple of 50Mbps
+function dev:setRate(rate)
+	local i40eDev = dpdkc.get_i40e_dev(self.id)
+	local vsiSeid = dpdkc.get_i40e_vsi_seid(self.id)
+	assert(ffi.C.i40e_aq_config_vsi_bw_limit(i40eDev, vsiSeid, rate, 0, null) == 0)
 end
 
 function txQueue:send(bufs)
