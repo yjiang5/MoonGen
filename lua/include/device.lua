@@ -201,23 +201,20 @@ end
 
 ffi.cdef[[
 /**
- * A structure used to configure Redirection Table of  the Receive Side
- * Scaling (RSS) feature of an Ethernet port.
+ * A structure used to configure 64 entries of Redirection Table of the
+ * Receive Side Scaling (RSS) feature of an Ethernet port. To configure
+ * more than 64 entries supported by hardware, an array of this structure
+ * is needed.
  */
-struct rte_eth_rss_reta {
-	/** First 64 mask bits indicate which entry(s) need to updated/queried. */
-	uint64_t mask_lo;
-	/** Second 64 mask bits indicate which entry(s) need to updated/queried. */
-	uint64_t mask_hi;
-	uint8_t reta[128];  /**< 128 RETA entries*/
+struct rte_eth_rss_reta_entry64 {
+	uint64_t mask;
+	/**< Mask bits indicate which entries need to be updated/queried. */
+	uint8_t reta[RTE_RETA_GROUP_SIZE];
+	/**< Group of 64 redirection table entries. */
 };
 
-int mg_rte_eth_dev_rss_reta_update 	( 	uint8_t  	port,
-		struct rte_eth_rss_reta *  	reta_conf 
-	);
-int rte_eth_dev_rss_reta_update 	( 	uint8_t  	port,
-		struct rte_eth_rss_reta *  	reta_conf 
-	);
+int mg_rte_eth_dev_rss_reta_update (uint8_t port, struct rte_eth_rss_reta_entry64 *reta_conf, uint16_t reta_size);
+int rte_eth_dev_rss_reta_update (uint8_t port, struct rte_eth_rss_reta_entry64 *reta_conf, uint16_t reta_size);
 ]]
 
 function dev:setRssNQueues(n)
@@ -228,7 +225,7 @@ function dev:setRssNQueues(n)
   if(({[1]=1, [2]=1, [4]=1, [8]=1, [16]=1})[n] == nil) then
     log:warn("RSS distribution to queues will not be fair. Fair distribution is only achieved with a number of Queues equal to 1, 2, 4, 8 or 16. However you are currently using %d queues", n)
   end
-  local reta = ffi.new("struct rte_eth_rss_reta")
+  local reta = ffi.new("struct rte_eth_rss_reta_entry64")
 
   local npq = 128/n
   local queue = 0
@@ -243,7 +240,7 @@ function dev:setRssNQueues(n)
 
   -- the mg_ version of rte_eth_dev_rss_reta_update() will also write the mask
   -- to the reta_config struct, as lua can not do 64bit unsigned int operations.
-  local ret = ffi.C.mg_rte_eth_dev_rss_reta_update(self.id, reta)
+  local ret = ffi.C.mg_rte_eth_dev_rss_reta_update(self.id, reta, 128)
   if (ret ~= 0) then
     log:fatal("Error setting up RETA table: " .. errors.getstr(-ret))
   end

@@ -76,11 +76,11 @@ int configure_device(int port, int rx_queues, int tx_queues, int rx_descs, int t
       //printf("ipv4\n");
     }
     if(hash_functions->udp_ipv4){
-      rss_hash_functions |= ETH_RSS_IPV4_UDP;
+      rss_hash_functions |= ETH_RSS_NONFRAG_IPV4_UDP;
       //printf("ipv4 udp\n");
     }
     if(hash_functions->tcp_ipv4){
-      rss_hash_functions |= ETH_RSS_IPV4_TCP;
+      rss_hash_functions |= ETH_RSS_NONFRAG_IPV4_TCP;
       //printf("ipv4 tcp\n");
     }
     if(hash_functions->ipv6){
@@ -88,11 +88,11 @@ int configure_device(int port, int rx_queues, int tx_queues, int rx_descs, int t
       //printf("ipv6\n");
     }
     if(hash_functions->udp_ipv6){
-      rss_hash_functions |= ETH_RSS_IPV6_TCP;
+      rss_hash_functions |= ETH_RSS_NONFRAG_IPV6_UDP;
       //printf("ipv6 udp\n");
     }
     if(hash_functions->tcp_ipv6){
-      rss_hash_functions |= ETH_RSS_IPV6_UDP;
+      rss_hash_functions |= ETH_RSS_NONFRAG_IPV6_TCP;
       //printf("ipv6 tcp\n");
     }
   }
@@ -557,13 +557,13 @@ void rte_delay_us_export(uint32_t us) {
 
 // This is a workaround, because lua can not do good 64bit operations.
 // so this function wraps the dpdk one, but is always setting the mask to all 1
-int mg_rte_eth_dev_rss_reta_update 	(uint8_t port, struct rte_eth_rss_reta *reta_conf){
+int mg_rte_eth_dev_rss_reta_update (uint8_t port, struct rte_eth_rss_reta_entry64 *reta_conf,
+                                    uint16_t reta_size) {
   //printf("reta port = %u\n", port);
   //uint8_t i;
   //for(i = 0; i<128; i++){
   //  printf(" i = %u, reta = %u\n", i, reta_conf->reta[i]);
   //}
-  reta_conf->mask_lo = 0xffffffffffffffffULL;
-  reta_conf->mask_hi = 0xffffffffffffffffULL;
-  return rte_eth_dev_rss_reta_update(port, reta_conf);
+  reta_conf->mask = 0xffffffffffffffffULL;
+  return rte_eth_dev_rss_reta_update(port, reta_conf, reta_size);
 }
