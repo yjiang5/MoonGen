@@ -78,7 +78,7 @@ ffi.cdef[[
 		union {
             void *userdata;   /**< Can be used for external metadata */
             uint64_t udata64; /**< Allow 8-byte userdata on 32-bit */
-            uint32_t ol_ipsec /* TODO: this seems incorrect!!! */
+            uint32_t ol_ipsec; /* TODO: this seems incorrect!!! */
         };
 
 		struct rte_mempool *pool;
@@ -187,14 +187,14 @@ ffi.cdef[[
 		/**< Total number of good bytes transmitted to loopback,VF Only */
 	};
 
-  struct mg_rss_hash_mask{
-    uint8_t ipv4 :1;
-    uint8_t tcp_ipv4 :1;
-    uint8_t udp_ipv4 :1;
-    uint8_t ipv6 :1;
-    uint8_t tcp_ipv6 :1;
-    uint8_t udp_ipv6 :1;
-  };
+    struct mg_rss_hash_mask{
+        uint8_t ipv4 :1;
+        uint8_t tcp_ipv4 :1;
+        uint8_t udp_ipv4 :1;
+        uint8_t ipv6 :1;
+        uint8_t tcp_ipv6 :1;
+        uint8_t udp_ipv6 :1;
+    };
 ]]
 
 -- dpdk functions and wrappers
