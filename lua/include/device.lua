@@ -209,7 +209,7 @@ ffi.cdef[[
 struct rte_eth_rss_reta_entry64 {
 	uint64_t mask;
 	/**< Mask bits indicate which entries need to be updated/queried. */
-	uint8_t reta[RTE_RETA_GROUP_SIZE];
+	uint8_t reta[128];
 	/**< Group of 64 redirection table entries. */
 };
 
@@ -473,8 +473,8 @@ end
 
 --- get the number of packets received since the last call to this function
 function dev:getRxStats()
-	local devId = self:getPciId()
-	if devId == mod.PCI_ID_XL710 then
+	local id = self:getPciId()
+	if id == mod.PCI_ID_X710 or devId == mod.PCI_ID_XL710 then
 		local uprc, mprc, bprc, gorc
 		local port = dpdkc.get_i40e_pci_port(self.id)
 		uprc, lastUprc[self.id] = readCtr32(self.id, GLPRT_UPRCL[port], lastUprc[self.id])
@@ -518,8 +518,8 @@ function dev:getTxStats()
 	local badPkts = tonumber(dpdkc.get_bad_pkts_sent(self.id))
 	local badBytes = tonumber(dpdkc.get_bad_bytes_sent(self.id))
 	-- FIXME: this should really be split up into separate functions/files
-	local devId = self:getPciId()
-	if devId == mod.PCI_ID_XL710 then
+	local id = self:getPciId()
+	if id == mod.PCI_ID_X710 or devId == mod.PCI_ID_XL710 then
 		local uptc, mptc, bptc, gotc
 		local port = dpdkc.get_i40e_pci_port(self.id)
 		uptc, lastUptc[self.id] = readCtr32(self.id, GLPRT_UPTCL[port], lastUptc[self.id])
