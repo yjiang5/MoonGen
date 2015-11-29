@@ -97,13 +97,28 @@ int configure_device(int port, int rx_queues, int tx_queues, int rx_descs, int t
     }
   }
 
-
 	// TODO: enable other FDIR filter types
 	struct rte_fdir_conf fdir_conf = {
 		.mode = RTE_FDIR_MODE_PERFECT,
 		.pballoc = RTE_FDIR_PBALLOC_64K,
 		.status = RTE_FDIR_REPORT_STATUS_ALWAYS,
-		.flexbytes_offset = 21, // TODO support other values
+		//		.flex_conf = {
+//			.nb_payloads = 1,
+//			.nb_flexmasks = 1,
+//			.flex_set = {
+//				[0] = {
+//					.type = RTE_ETH_RAW_PAYLOAD,
+//					.src_offset = { [0] = 42, [1] = 43 }, // TODO: support other values
+//				}
+//			},
+//			.flex_mask = {
+//				[0] = {
+//					// any other value is apparently an error for this undocumented field
+//					.flow_type = RTE_ETH_FLOW_UNKNOWN,
+//					.mask = { [0] = 0xFF, [1] = 0xFF }
+//				}
+//			},
+//		},
 		.drop_queue = 63, // TODO: support for other NICs
 	};
 
@@ -128,7 +143,7 @@ int configure_device(int port, int rx_queues, int tx_queues, int rx_descs, int t
 		},
 		.fdir_conf = fdir_conf,
 		.link_speed = link_speed,
-    .rx_adv_conf.rss_conf = rss_conf,
+        .rx_adv_conf.rss_conf = rss_conf,
 	};
 	int rc = rte_eth_dev_configure(port, rx_queues, tx_queues, &port_conf);
 	if (rc) return rc;
@@ -196,6 +211,10 @@ void* get_i40e_dev(int port) {
 
 int get_i40e_vsi_seid(int port) {
 	return I40E_DEV_PRIVATE_TO_PF(rte_eth_devices[port].data->dev_private)->main_vsi->seid;
+}
+
+uint8_t get_i40e_pci_port(uint8_t port) {
+	return I40E_DEV_PRIVATE_TO_HW(rte_eth_devices[port].data->dev_private)->port;
 }
 
 uint64_t get_mac_addr(int port, char* buf) {
@@ -351,8 +370,8 @@ static struct rte_mbuf* get_delay_pkt_invalid_size(struct rte_mempool* pool, uin
 	// TODO: consider allocating these packets at the beginning for performance reasons
 	struct rte_mbuf* pkt = rte_pktmbuf_alloc(pool);
 	// account for CRC offloading
-	pkt->pkt.data_len = delay - 24;
-	pkt->pkt.pkt_len = delay - 24;
+	pkt->data_len = delay - 24;
+	pkt->pkt_len = delay - 24;
 	//printf("%d\n", delay - 24);
 	return pkt;
 }
@@ -368,14 +387,14 @@ void send_all_packets_with_delay_invalid_size(uint8_t port_id, uint16_t queue_id
 		// desired inter-frame spacing is encoded in the hash field (not used on TX packets)
 		// it would also be possible to use the buffer's headroom but this is ugly from Lua
 		// TODO: this can be changed to the new userdata or udata64 fields in DPDK 1.8
-		uint32_t delay = pkt->pkt.hash.rss;
+		uint32_t delay = pkt->hash.rss;
 		// step 1: generate delay-packets
 		while (delay > 0) {
 			struct rte_mbuf* pkt = get_delay_pkt_invalid_size(pool, &delay);
 			if (pkt) {
 				num_bad_pkts++;
 				// packet size: [MAC, CRC] to be consistent with HW counters
-				num_bad_bytes += pkt->pkt.pkt_len + 4;
+				num_bad_bytes += pkt->pkt_len + 4;
 				pkts[send_buf_idx++] = pkt;
 			}
 			if (send_buf_idx >= BUF_SIZE) {
@@ -430,9 +449,9 @@ static struct rte_mbuf* get_delay_pkt_bad_crc(struct rte_mempool* pool, uint32_t
 	*rem_delay -= delay;
 	struct rte_mbuf* pkt = rte_pktmbuf_alloc(pool);
 	// account for preamble, sfd, and ifg (CRC is disabled)
-	pkt->pkt.data_len = delay - 20;
-	pkt->pkt.pkt_len = delay - 20;
-	pkt->ol_flags |= PKT_TX_NO_CRC_CSUM;
+	pkt->data_len = delay - 20;
+	pkt->pkt_len = delay - 20;
+	pkt->ol_flags |= PKT_TX_L4_NO_CKSUM;
 	current += delay;
 	return pkt;
 }
@@ -450,14 +469,14 @@ void send_all_packets_with_delay_bad_crc(uint8_t port_id, uint16_t queue_id, str
 		// desired inter-frame spacing is encoded in the hash field (not used on TX packets)
 		// it would also be possible to use the buffer's headroom but this is ugly from Lua
 		// TODO: this can be changed to the new userdata or udata64 fields in DPDK 1.8
-		uint32_t delay = pkt->pkt.hash.rss;
+		uint32_t delay = pkt->hash.rss;
 		// step 1: generate delay-packets
 		while (delay > 0) {
 			struct rte_mbuf* pkt = get_delay_pkt_bad_crc(pool, &delay);
 			if (pkt) {
 				num_bad_pkts++;
 				// packet size: [MAC, CRC] to be consistent with HW counters
-				num_bad_bytes += pkt->pkt.pkt_len;
+				num_bad_bytes += pkt->pkt_len;
 				pkts[send_buf_idx++] = pkt;
 			}
 			if (send_buf_idx >= BUF_SIZE) {
@@ -538,9 +557,7 @@ void rte_delay_us_export(uint32_t us) {
 
 // This is a workaround, because lua can not do good 64bit operations.
 // so this function wraps the dpdk one, but is always setting the mask to all 1
-int mg_rte_eth_dev_rss_reta_update 	( 	uint8_t  	port,
-		struct rte_eth_rss_reta *  	reta_conf 
-	){
+int mg_rte_eth_dev_rss_reta_update 	(uint8_t port, struct rte_eth_rss_reta *reta_conf){
   //printf("reta port = %u\n", port);
   //uint8_t i;
   //for(i = 0; i<128; i++){
