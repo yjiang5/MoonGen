@@ -47,8 +47,7 @@
 
 #define NB_MBUF          8192
 #define MAX_PACKET_SZ    2048
-#define MBUF_SZ \
-	(MAX_PACKET_SZ + sizeof(struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
+#define MBUF_DATA_SZ     (MAX_PACKET_SZ + RTE_PKTMBUF_HEADROOM)
 #define PKT_BURST_SZ     32
 #define MEMPOOL_CACHE_SZ PKT_BURST_SZ
 #define SOCKET           0
@@ -58,7 +57,7 @@
 
 #define IFCONFIG      "/sbin/ifconfig "
 #define TEST_KNI_PORT "test_kni_port"
-
+#define KNI_TEST_MAX_PORTS 4
 /* The threshold number of mbufs to be transmitted or received. */
 #define KNI_NUM_MBUF_THRESHOLD 100
 static int kni_pkt_mtu = 0;
@@ -118,17 +117,10 @@ test_kni_create_mempool(void)
 
 	mp = rte_mempool_lookup("kni_mempool");
 	if (!mp)
-		mp = rte_mempool_create("kni_mempool",
+		mp = rte_pktmbuf_pool_create("kni_mempool",
 				NB_MBUF,
-				MBUF_SZ,
-				MEMPOOL_CACHE_SZ,
-				sizeof(struct rte_pktmbuf_pool_private),
-				rte_pktmbuf_pool_init,
-				NULL,
-				rte_pktmbuf_init,
-				NULL,
-				SOCKET,
-				0);
+				MEMPOOL_CACHE_SZ, 0, MBUF_DATA_SZ,
+				SOCKET);
 
 	return mp;
 }
@@ -498,6 +490,9 @@ test_kni(void)
 	struct rte_eth_dev_info info;
 	struct rte_kni_ops ops;
 
+	/* Initialize KNI subsytem */
+	rte_kni_init(KNI_TEST_MAX_PORTS);
+
 	if (test_kni_allocate_lcores() < 0) {
 		printf("No enough lcores for kni processing\n");
 		return -1;
@@ -506,11 +501,6 @@ test_kni(void)
 	mp = test_kni_create_mempool();
 	if (!mp) {
 		printf("fail to create mempool for kni\n");
-		return -1;
-	}
-	ret = rte_eal_pci_probe();
-	if (ret < 0) {
-		printf("fail to probe PCI devices\n");
 		return -1;
 	}
 

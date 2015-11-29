@@ -31,6 +31,7 @@
 #include <linux/io.h>
 #include <linux/msi.h>
 #include <linux/version.h>
+#include <linux/slab.h>
 
 #ifdef CONFIG_XEN_DOM0
 #include <xen/xen.h>
@@ -83,11 +84,7 @@ store_max_vfs(struct device *dev, struct device_attribute *attr,
 	unsigned long max_vfs;
 	struct pci_dev *pdev = container_of(dev, struct pci_dev, dev);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0)
-	if (0 != strict_strtoul(buf, 0, &max_vfs))
-#else
 	if (0 != kstrtoul(buf, 0, &max_vfs))
-#endif
 		return -EINVAL;
 
 	if (0 == max_vfs)
@@ -178,7 +175,7 @@ store_max_read_request_size(struct device *dev,
 	unsigned long size = 0;
 	int ret;
 
-	if (strict_strtoul(buf, 0, &size) != 0)
+	if (0 != kstrtoul(buf, 0, &size))
 		return -EINVAL;
 
 	ret = pcie_set_readrq(pci_dev, (int)size);
@@ -291,7 +288,7 @@ igbuio_dom0_mmap_phys(struct uio_info *info, struct vm_area_struct *vma)
 
 	idx = (int)vma->vm_pgoff;
 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-#if defined(HAVE_PTE_MASK_PAGE_IOMAP)
+#ifdef HAVE_PTE_MASK_PAGE_IOMAP
 	vma->vm_page_prot.pgprot |= _PAGE_IOMAP;
 #endif
 

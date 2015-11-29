@@ -4,7 +4,7 @@ local device	= require "device"
 local stats		= require "stats"
 local timer		= require "timer"
 
-memory.enableCache()
+--memory.enableCache()
 
 local RUN_TIME = 10
 

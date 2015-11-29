@@ -28,12 +28,17 @@ local write = io.write
 local pkt = {}
 pkt.__index = pkt
 
+--- Get a void* pointer to the packet data.
+function pkt:getData()
+	return ffi.cast("void*", ffi.cast("uint8_t*", self.buf_addr) + self.data_off)
+end
+
 --- Retrieve the time stamp information.
 --- @return The timestamp or nil if the packet was not time stamped.
 function pkt:getTimestamp()
 	if bit.bor(self.ol_flags, dpdk.PKT_RX_IEEE1588_TMST) ~= 0 then
 		-- TODO: support timestamps that are stored in registers instead of the rx buffer
-		local data = ffi.cast("uint32_t* ", self.pkt.data)
+		local data = ffi.cast("uint32_t* ", self:getData())
 		-- TODO: this is only tested with the Intel 82580 NIC at the moment
 		-- the datasheet claims that low and high are swapped, but this doesn't seem to be the case
 		-- TODO: check other NICs
@@ -52,6 +57,10 @@ function pkt:hasTimestamp()
 	return bit.bor(self.ol_flags, dpdk.PKT_RX_IEEE1588_TMST) ~= 0
 end
 
+function pkt:getTimesync()
+	return self.timesync
+end
+
 function pkt:getSecFlags()
 	local secp = bit.rshift(bit.band(self.ol_flags, dpdk.PKT_RX_IPSEC_SECP), 11)
 	local secerr = bit.rshift(bit.band(self.ol_flags, bit.bor(dpdk.PKT_RX_SECERR_MSB, dpdk.PKT_RX_SECERR_LSB)), 12)
@@ -61,7 +70,7 @@ end
 --- Offload VLAN tagging to the NIC for this packet.
 function pkt:setVlan(vlan, pcp, cfi)
 	local tci = vlan + bit.lshift(pcp or 0, 13) + bit.lshift(cfi or 0, 12)
-	self.pkt.vlan_tci = tci
+	self.vlan_tci = tci
 	self.ol_flags = bit.bor(self.ol_flags, dpdk.PKT_TX_VLAN_PKT)
 end
 
@@ -72,7 +81,7 @@ function pkt:getVlan()
 	if bit.bor(self.ol_flags, VLAN_VALID_MASK) == 0 then
 		return nil
 	end
-	local tci = self.pkt.vlan_tci
+	local tci = self.vlan_tci
 	return bit.band(tci, 0xFFF), bit.rshift(tci, 13), bit.band(bit.rshift(tci, 12), 1)
 end
 
@@ -80,22 +89,22 @@ end
 --- Set the time to wait before the packet is sent for software rate-controlled send methods.
 --- @param delay The time to wait before this packet \(in bytes, i.e. 1 == 0.8 nanoseconds on 10 GbE\)
 function pkt:setDelay(delay)
-	self.pkt.hash.rss = delay
+	self.hash.rss = delay
 end
 
 --- @todo TODO docu
 function pkt:setRate(rate)
-	self.pkt.hash.rss = 10^10 / 8 / (rate * 10^6) - self.pkt.pkt_len - 24
+	self.hash.rss = 10^10 / 8 / (rate * 10^6) - self.pkt_len - 24
 end
 
 --- @todo TODO does
 function pkt:setSize(size)
-	self.pkt.pkt_len = size
-	self.pkt.data_len = size
+	self.pkt_len = size
+	self.data_len = size
 end
 
 function pkt:getSize()
-	return self.pkt.pkt_len
+	return self.pkt_len
 end
 
 --- Returns the packet data cast to the best fitting packet struct. 
@@ -113,7 +122,7 @@ function pkt:dump(bytes, stream)
 		stream = bytes
 		bytes = nil
 	end
-	self:get():dump(bytes or self.pkt.pkt_len, stream or io.stdout)
+	self:get():dump(bytes or self.pkt_len, stream or io.stdout)
 end
 
 -------------------------------------------------------------------------------------------------------
@@ -143,14 +152,14 @@ function pkt:offloadIPSec(idx, sec_type, esp_mode)
 	--	error("SA_IDX has to be in range 0-2013")
 	--end
 	--self.ol_ipsec.sec.sa_idx = idx
-	self.ol_ipsec.data = bit.bor(self.ol_ipsec.data, bit.lshift(bit.band(idx, 0x3FF), 0))
+	self.ol_ipsec = bit.bor(self.ol_ipsec, bit.lshift(bit.band(idx, 0x3FF), 0))
 
 	-- Set ESP enc/auth mode
 	--if mode ~= 0 and mode ~= 1 then
 	--	error("Wrong IPSec mode")
 	--end
 	--self.ol_ipsec.sec.mode = mode
-	self.ol_ipsec.data = bit.bor(self.ol_ipsec.data, bit.lshift(bit.band(mode, 0x1), 20))
+	self.ol_ipsec = bit.bor(self.ol_ipsec, bit.lshift(bit.band(mode, 0x1), 20))
 
 	-- Set IPSec ESP/AH type
 	--if sec_type == "esp" then
@@ -160,7 +169,7 @@ function pkt:offloadIPSec(idx, sec_type, esp_mode)
 	--else
 	--	error("Wrong IPSec type (esp/ah)")
 	--end
-	self.ol_ipsec.data = bit.bor(self.ol_ipsec.data, bit.lshift(bit.band(t, 0x1), 19))
+	self.ol_ipsec = bit.bor(self.ol_ipsec, bit.lshift(bit.band(t, 0x1), 19))
 end
 
 --- Set the ESP trailer length
@@ -171,7 +180,7 @@ function pkt:setESPTrailerLength(len)
 	--	error("ESP trailer length has to be in range 0-511")
 	--end
 	--self.ol_ipsec.sec.esp_len = len -- dont use bitfields
-	self.ol_ipsec.data = bit.bor(self.ol_ipsec.data, bit.lshift(bit.band(len, 0x1FF), 10))
+	self.ol_ipsec = bit.bor(self.ol_ipsec, bit.lshift(bit.band(len, 0x1FF), 10))
 end
 
 -------------------------------------------------------------------------------------------------------
@@ -189,8 +198,8 @@ function pkt:offloadIPChecksum(ipv4, l2_len, l3_len)
 	if ipv4 then
 		l2_len = l2_len or 14
 		l3_len = l3_len or 20
-		self.ol_flags = bit.bor(self.ol_flags, dpdk.PKT_TX_IPV4_CSUM)
-		self.pkt.header_lengths = l2_len * 512 + l3_len
+		self.ol_flags = bit.bor(self.ol_flags, dpdk.PKT_TX_IPV4, dpdk.PKT_TX_IP_CKSUM)
+		self.header_lengths = l2_len + l3_len * 128
 	end
 end
 
@@ -204,16 +213,16 @@ function pkt:offloadUdpChecksum(ipv4, l2_len, l3_len)
 	l2_len = l2_len or 14
 	if ipv4 then
 		l3_len = l3_len or 20
-		self.ol_flags = bit.bor(self.ol_flags, dpdk.PKT_TX_IPV4_CSUM, dpdk.PKT_TX_UDP_CKSUM)
-		self.pkt.header_lengths = l2_len * 512 + l3_len
+		self.ol_flags = bit.bor(self.ol_flags, dpdk.PKT_TX_IPV4, dpdk.PKT_TX_IP_CKSUM, dpdk.PKT_TX_UDP_CKSUM)
+		self.header_lengths = l2_len + l3_len * 128
 		-- calculate pseudo header checksum because the NIC doesn't do this...
-		dpdkc.calc_ipv4_pseudo_header_checksum(self.pkt.data, 20)
+		dpdkc.calc_ipv4_pseudo_header_checksum(self:getData(), 20)
 	else 
 		l3_len = l3_len or 40
-		self.ol_flags = bit.bor(self.ol_flags, dpdk.PKT_TX_UDP_CKSUM)
-		self.pkt.header_lengths = l2_len * 512 + l3_len
+		self.ol_flags = bit.bor(self.ol_flags, dpdk.PKT_TX_IPV6, dpdk.PKT_TX_IP_CKSUM, dpdk.PKT_TX_UDP_CKSUM)
+		self.header_lengths = l2_len + l3_len * 128
 		-- calculate pseudo header checksum because the NIC doesn't do this...
-		dpdkc.calc_ipv6_pseudo_header_checksum(self.pkt.data, 30)
+		dpdkc.calc_ipv6_pseudo_header_checksum(self:getData(), 30)
 	end
 end
 
@@ -227,16 +236,16 @@ function pkt:offloadTcpChecksum(ipv4, l2_len, l3_len)
 	l2_len = l2_len or 14
 	if ipv4 then
 		l3_len = l3_len or 20
-		self.ol_flags = bit.bor(self.ol_flags, dpdk.PKT_TX_IPV4_CSUM, dpdk.PKT_TX_TCP_CKSUM)
-		self.pkt.header_lengths = l2_len * 512 + l3_len
+		self.ol_flags = bit.bor(self.ol_flags, dpdk.PKT_TX_IPV4, dpdk.PKT_TX_IP_CKSUM, dpdk.PKT_TX_TCP_CKSUM)
+		self.header_lengths = l2_len + l3_len * 128
 		-- calculate pseudo header checksum because the NIC doesn't do this...
-		dpdkc.calc_ipv4_pseudo_header_checksum(self.pkt.data, 25)
+		dpdkc.calc_ipv4_pseudo_header_checksum(self:getData(), 25)
 	else 
 		l3_len = l3_len or 40
-		self.ol_flags = bit.bor(self.ol_flags, dpdk.PKT_TX_TCP_CKSUM)
-		self.pkt.header_lengths = l2_len * 512 + l3_len
+		self.ol_flags = bit.bor(self.ol_flags, dpdk.PKT_TX_IPV6, dpdk.PKT_TX_IP_CKSUM, dpdk.PKT_TX_TCP_CKSUM)
+		self.header_lengths = l2_len + l3_len * 128
 		-- calculate pseudo header checksum because the NIC doesn't do this...
-		dpdkc.calc_ipv6_pseudo_header_checksum(self.pkt.data, 35)
+		dpdkc.calc_ipv6_pseudo_header_checksum(self:getData(), 35)
 	end
 end
 
@@ -316,7 +325,7 @@ function packetCreate(...)
 	ffi.metatype(packetName, packet)
 
 	-- return 'get'/'cast' for this kind of packet
-	return function(self) return ctype(self.pkt.data) end
+	return function(self) return ctype(self:getData()) end
 end
 
 --- Get the name of the header and the name of the respective member of a packet
@@ -651,7 +660,7 @@ end
 local payloadType = ffi.typeof("union payload_t*")
 
 function pkt:getRawPacket()
-	return payloadType(self.pkt.data)
+	return payloadType(self:getData())
 end
 
 ---------------------------------------------------------------------------

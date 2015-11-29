@@ -4,7 +4,7 @@ local device	= require "device"
 local stats		= require "stats"
 local timer		= require "timer"
 
-memory.enableCache()
+--memory.enableCache()
 
 -- TODO: this
 function master(port1, port2)

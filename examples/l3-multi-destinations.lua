@@ -15,15 +15,19 @@ local ffi	= require "ffi"
 
 function master(txPort, minIP, numIPs, rate)
 	
-	if not txPort or not minIP or not numIPs or not rate then
-		printf("usage: txPort minIP numIPs rate")
+	if not txPort or not minIP or not numIPs then
+		printf("usage: txPort minIP numIPs [rate]")
 		return
 	end
+
+	rate = rate or nil
 
 	local txDev = device.config(txPort)
 	device.waitForLinks()
 
-	txDev:getTxQueue(0):setRate(rate)
+	if rate then
+		txDev:getTxQueue(0):setRate(rate)
+	end
 
 	dpdk.launchLua("loadSlave", txDev, txDev:getTxQueue(0), minIP, numIPs)
 	dpdk.waitForSlaves()
