@@ -1,6 +1,6 @@
 DIR=utils
 lib:
-	gcc -o $(DIR)/snmpc.so $(DIR)/snmpc.c -lsnmp -llua -Wall -fPIC -shared
+	gcc -I /usr/include/lua5.1 -o $(DIR)/snmpc.so $(DIR)/snmpc.c -lsnmp -llua5.1 -Wall -fPIC -shared
 clean: 
 	rm -f $(DIR)/snmpc.so
 
