@@ -21,7 +21,7 @@ function master(...)
 	local rxDev = device.config(rxPort, 2, 2)
 	device.waitForLinks()
 	dpdk.launchLua("loadSlave", txDev, rxDev, txDev:getTxQueue(0), rate, PKT_SIZE)
-	dpdk.launchLua("timerSlave", txDev:getTxQueue(1), rxDev:getRxQueue(0), PKT_SIZE)
+	dpdk.launchLua("timerSlave", txDev:getTxQueue(1), rxDev:getRxQueue(1), PKT_SIZE)
 	dpdk.waitForSlaves()
 end
 

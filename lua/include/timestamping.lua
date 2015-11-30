@@ -15,7 +15,7 @@ local eth		= require "proto.ethernet"
 local memory	= require "memory"
 local timer		= require "timer"
 local log		= require "log"
-
+local filter	= require "filter"
 require "proto.ptp"
 
 local dev = device.__devicePrototype
@@ -127,6 +127,7 @@ local SRRCTL_TIMESTAMP		= bit.lshift(1, 30)
 
 -- constants
 local I40E_PTP_10GB_INCVAL  = (0x0333333333ULL)
+local ETH_TYPE_PTP          = 0x88f7
 
 ---
 --- @deprecated
@@ -247,6 +248,8 @@ local function enableRxTimestampsI40e(port, queue, udpPort, id)
 	dpdkc.read_reg32(port, PRTTSYN_RXTIME_L[3])
 	-- start the timer
 	startTimerI40e(port, id)
+	-- l2 rx filter
+	device.get(port):l2Filter(ETH_TYPE_PTP, queue)
 	-- enable rx timestamping
 	local val0 = dpdkc.read_reg32(port, PRTTSYN_CTL0)
 	dpdkc.write_reg32(port, PRTTSYN_CTL0, bit.bor(val0, PRTTSYN_CTL0_TSYNENA))
