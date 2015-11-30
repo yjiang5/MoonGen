@@ -62,40 +62,40 @@ static inline volatile uint32_t* get_reg_addr(uint8_t port, uint32_t reg) {
 }
 
 int configure_device(int port, int rx_queues, int tx_queues, int rx_descs, int tx_descs, uint16_t link_speed, struct rte_mempool* mempool, bool drop_en, uint8_t rss_enable, struct mg_rss_hash_mask * hash_functions) {
-  //printf("configure device: rxqueues = %d, txdevs = %d, port = %d\n", rx_queues, tx_queues, port);
+    //printf("configure device: rxqueues = %d, txdevs = %d, port = %d\n", rx_queues, tx_queues, port);
 	if (port >= RTE_MAX_ETHPORTS) {
 		printf("error: Maximum number of supported ports is %d\n   This can be changed with the DPDK compile-time configuration variable RTE_MAX_ETHPORTS\n", RTE_MAX_ETHPORTS);
 		return -1;
 	}
 
-  uint64_t rss_hash_functions = 0;
-  if(rss_enable && hash_functions != NULL){
-    // configure the selected hash functions:
-    if(hash_functions->ipv4){
-      rss_hash_functions |= ETH_RSS_IPV4;
-      //printf("ipv4\n");
+    uint64_t rss_hash_functions = 0;
+    if(rss_enable && hash_functions != NULL){
+        // configure the selected hash functions:
+        if(hash_functions->ipv4){
+            rss_hash_functions |= ETH_RSS_IPV4;
+            //printf("ipv4\n");
+        }
+        if(hash_functions->udp_ipv4){
+              rss_hash_functions |= ETH_RSS_NONFRAG_IPV4_UDP;
+              //printf("ipv4 udp\n");
+        }
+        if(hash_functions->tcp_ipv4){
+              rss_hash_functions |= ETH_RSS_NONFRAG_IPV4_TCP;
+              //printf("ipv4 tcp\n");
+        }
+        if(hash_functions->ipv6){
+              rss_hash_functions |= ETH_RSS_IPV6;
+              //printf("ipv6\n");
+        }
+        if(hash_functions->udp_ipv6){
+              rss_hash_functions |= ETH_RSS_NONFRAG_IPV6_UDP;
+              //printf("ipv6 udp\n");
+        }
+        if(hash_functions->tcp_ipv6){
+              rss_hash_functions |= ETH_RSS_NONFRAG_IPV6_TCP;
+              //printf("ipv6 tcp\n");
+        }
     }
-    if(hash_functions->udp_ipv4){
-      rss_hash_functions |= ETH_RSS_NONFRAG_IPV4_UDP;
-      //printf("ipv4 udp\n");
-    }
-    if(hash_functions->tcp_ipv4){
-      rss_hash_functions |= ETH_RSS_NONFRAG_IPV4_TCP;
-      //printf("ipv4 tcp\n");
-    }
-    if(hash_functions->ipv6){
-      rss_hash_functions |= ETH_RSS_IPV6;
-      //printf("ipv6\n");
-    }
-    if(hash_functions->udp_ipv6){
-      rss_hash_functions |= ETH_RSS_NONFRAG_IPV6_UDP;
-      //printf("ipv6 udp\n");
-    }
-    if(hash_functions->tcp_ipv6){
-      rss_hash_functions |= ETH_RSS_NONFRAG_IPV6_TCP;
-      //printf("ipv6 tcp\n");
-    }
-  }
 
 	// TODO: enable other FDIR filter types
 	struct rte_fdir_conf fdir_conf = {
@@ -177,7 +177,7 @@ int configure_device(int port, int rx_queues, int tx_queues, int rx_descs, int t
 	};
 	for (int i = 0; i < rx_queues; i++) {
 		// TODO: get socket id for the NIC
-    //printf("setting up queue nr %d !\n", i);
+        //printf("setting up queue nr %d !\n", i);
 		rc = rte_eth_rx_queue_setup(port, i, rx_descs ? rx_descs : DEFAULT_RX_DESCS, SOCKET_ID_ANY, &rx_conf, mempool);
 		if (rc != 0) {
 			printf("could not configure rx queue %d\n", i);
