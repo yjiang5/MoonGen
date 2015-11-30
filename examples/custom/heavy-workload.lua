@@ -8,6 +8,9 @@ function master(port1, cores, rate)
 	end
 	rate = rate or 0
 	local dev1 = device.config(port1, 1, cores)
+	if dev1:getPciId() ~= device.PCI_ID_X710 and dev1:getPciId() ~= device.PCI_ID_XL710 then
+		errorf("Invalid NIC")
+	end
 	dev1:setRate(rate)
 	device.waitForLinks()
 	for i = 0, cores - 1 do
