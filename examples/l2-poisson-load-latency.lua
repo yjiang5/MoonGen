@@ -16,7 +16,7 @@ function master(...)
 	if not txPort or not rxPort then
 		return log:info("usage: txPort rxPort [rate (Mpps)]")
 	end
-	rate = rate or 2
+	rate = rate or 0
 	local txDev = device.config(txPort, 2, 2)
 	local rxDev = device.config(rxPort, 2, 2)
 	device.waitForLinks()
