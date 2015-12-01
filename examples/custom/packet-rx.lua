@@ -38,7 +38,8 @@ end
 function rxSlave1(queue1)
 	local bufs = memory.bufArray()
 	local ctr1 = stats:newDevRxCounter(queue1.dev, "plain")
-	while dpdk.running() do
+	local runtime = timer:new(RUN_TIME)
+	while runtime:running() and dpdk.running() do
 		queue1:tryRecv(bufs, 10)
 		bufs:freeAll()
 		ctr1:update()
@@ -51,7 +52,8 @@ function rxSlave2(queue1, queue2)
 	local bufs = memory.bufArray()
 	local ctr1 = stats:newDevRxCounter(queue1.dev, "plain")
 	local ctr2 = stats:newDevRxCounter(queue2.dev, "plain")
-	while dpdk.running() do
+	local runtime = timer:new(RUN_TIME)
+	while runtime:running() and dpdk.running() do
 		queue1:tryRecv(bufs, 10)
 		bufs:freeAll()
 		ctr1:update()
@@ -69,7 +71,8 @@ function rxSlave3(queue1, queue2, queue3)
 	local ctr1 = stats:newDevRxCounter(queue1.dev, "plain")
 	local ctr2 = stats:newDevRxCounter(queue2.dev, "plain")
 	local ctr3 = stats:newDevRxCounter(queue3.dev, "plain")
-	while dpdk.running() do
+	local runtime = timer:new(RUN_TIME)
+	while runtime:running() and dpdk.running() do
 		queue1:tryRecv(bufs, 10)
 		bufs:freeAll()
 		ctr1:update()
