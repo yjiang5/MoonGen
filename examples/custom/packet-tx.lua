@@ -6,6 +6,8 @@ local timer		= require "timer"
 
 --memory.enableCache()
 
+PKT_SIZE = 64
+
 -- TODO: this
 function master(port1, port2, port3)
 	if not port1 or not port2 or not port3 then
@@ -23,8 +25,8 @@ end
 function loadSlave(queue1, queue2, queue3)
 	local mem = memory.createMemPool(function(buf)
 		buf:getEthernetPacket():fill{
-			pktLength = size,
-			ethSrc = queue,
+			pktLength = PKT_SIZE,
+			ethSrc = "10:11:12:13:14:14",
 			ethDst = "10:11:12:13:14:15",
 		}
 	end)
@@ -33,13 +35,13 @@ function loadSlave(queue1, queue2, queue3)
 	local ctr2 = stats:newDevTxCounter(queue2.dev, "plain")
 	local ctr3 = stats:newDevTxCounter(queue3.dev, "plain")
 	while dpdk.running() do
-		bufs:alloc(size)
+		bufs:alloc(PKT_SIZE)
 		queue1:send(bufs)
 		ctr1:update()
-		bufs:alloc(size)
+		bufs:alloc(PKT_SIZE)
 		queue2:send(bufs)
 		ctr2:update()
-		bufs:alloc(size)
+		bufs:alloc(PKT_SIZE)
 		queue3:send(bufs)
 		ctr3:update()
 	end
