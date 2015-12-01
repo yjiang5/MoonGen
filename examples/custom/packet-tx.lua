@@ -6,7 +6,7 @@ local timer		= require "timer"
 
 --memory.enableCache()
 
-PKT_SIZE = 64
+PKT_SIZE = 128
 
 -- TODO: this
 function master(port1, port2, port3)
@@ -51,6 +51,8 @@ function loadSlave1(queue1)
 		ctr1:update()
 	end
 	ctr1:finalize()
+	printf("Total Mpps: %s (avg.), %s (stddev.)\r\nTotal Mbps: %s (avg.), %s (stddev.)", ctr1.mpps.avg, ctr1.mpps.stdDev,
+		ctr1.wireMbit.avg, ctr1.wireMbit.stdDev)
 	return nil -- TODO
 end
 
@@ -75,6 +77,9 @@ function loadSlave2(queue1, queue2)
 	end
 	ctr1:finalize()
 	ctr2:finalize()
+	printf("Total Mpps: %s (avg.), %s (stddev.)\r\nTotal Mbps: %s (avg.), %s (stddev.)",
+		ctr1.mpps.avg + ctr2.mpps.avg, ctr1.mpps.stdDev + ctr2.mpps.stdDev,
+		ctr1.wireMbit.avg + ctr2.wireMbit.avg, ctr1.wireMbit.stdDev + ctr2.wireMbit.stdDev)
 	return nil -- TODO
 end
 
@@ -104,6 +109,9 @@ function loadSlave3(queue1, queue2, queue3)
 	ctr1:finalize()
 	ctr2:finalize()
 	ctr3:finalize()
+	printf("Total Mpps: %s (avg.), %s (stddev.)\r\nTotal Mbps: %s (avg.), %s (stddev.)",
+		ctr1.mpps.avg + ctr2.mpps.avg + ctr3.mpps.avg, ctr1.mpps.stdDev + ctr2.mpps.stdDev + ctr3.mpps.stdDev,
+		ctr1.wireMbit.avg + ctr2.wireMbit.avg + ctr3.wireMbit.avg, ctr1.wireMbit.stdDev + ctr2.wireMbit.stdDev + ctr3.wireMbit.stdDev)
 	return nil -- TODO
 end
 
