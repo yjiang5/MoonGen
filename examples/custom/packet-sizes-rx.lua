@@ -16,7 +16,7 @@ function master(port1, port2)
 	local dev1 = device.config(port1)
 	local dev2 = device.config(port2)
 	device.waitForLinks()
-	local sizes = {64, 256, 512, 1024, 1518}
+	local sizes = {64, 256, 512, 1024, 1514}
 	for i,size in ipairs(sizes) do
 		print("Running test for packet size = " .. size)
 		local tx = dpdk.launchLua("loadSlave", dev1:getTxQueue(0), size)
