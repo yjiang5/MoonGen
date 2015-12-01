@@ -6,21 +6,27 @@ local dpdkc	= require "dpdkc"
 local ffi	= require "ffi"
 
 function master(...)
-	local rxPort0, txPort0, rxPort1, txPort1 = tonumberall(...)
+	local rxPort1, txPort1, rxPort2, txPort2, rxPort3, txPort3 = tonumberall(...)
 	-- TODO: NUMA-aware mempool allocation
-	local mempool0 = memory.createMemPool(1024)
 	local mempool1 = memory.createMemPool(1024)
-	dev.config(rxPort0, mempool0)
-	if rxPort0 ~= txPort0 then
-		dev.config(txPort0, mempool0)
-	end
+	local mempool2 = memory.createMemPool(1024)
+	local mempool3 = memory.createMemPool(1024)
 	dev.config(rxPort1, mempool1)
+	dev.config(rxPort2, mempool2)
+	dev.config(rxPort3, mempool3)
 	if rxPort1 ~= txPort1 then
 		dev.config(txPort1, mempool1)
 	end
-	dev.waitForLinks(rxPort0, txPort0, rxPort1, txPort1)
-	dpdk.launchLua("slave", rxPort0, txPort0, mempool0)
+	if rxPort2 ~= txPort2 then
+		dev.config(txPort2, mempool2)
+	end
+	if rxPort3 ~= txPort3 then
+		dev.config(txPort3, mempool3)
+	end
+	dev.waitForLinks()
 	dpdk.launchLua("slave", rxPort1, txPort1, mempool1)
+	dpdk.launchLua("slave", rxPort2, txPort2, mempool2)
+	dpdk.launchLua("slave", rxPort3, txPort3, mempool3)
 	dpdk.waitForSlaves()
 end
 
