@@ -53,7 +53,7 @@ end
 
 function rxSlave(queue, size)
 	local bufs = memory.bufArray()
-	local ctr = stats:newManualRxCounter(queue.dev, "plain")
+	local ctr = stats:newManualRxCounter(queue.dev, "CSV", "histogram.csv")
 	local runtime = timer:new(10)
 	while runtime:running() and dpdk.running() do
 		local rx = queue:tryRecv(bufs, 10)
