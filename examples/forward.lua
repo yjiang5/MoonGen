@@ -13,7 +13,7 @@ function master(...)
 	if rxPort ~= txPort then
 		dev.config(txPort, mempool)
 	end
-	dev.waitForPorts(rxPort, txPort)
+	dev.waitForLinks(rxPort, txPort)
 	dpdk.launchLua("slave", rxPort, txPort, mempool)
 	dpdk.waitForSlaves()
 end
