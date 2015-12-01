@@ -8,25 +8,43 @@ local ffi	= require "ffi"
 function master(...)
 	local rxPort1, txPort1, rxPort2, txPort2, rxPort3, txPort3 = tonumberall(...)
 	-- TODO: NUMA-aware mempool allocation
-	local mempool1 = memory.createMemPool(1024)
-	local mempool2 = memory.createMemPool(1024)
-	local mempool3 = memory.createMemPool(1024)
-	dev.config(rxPort1, mempool1)
-	dev.config(rxPort2, mempool2)
-	dev.config(rxPort3, mempool3)
-	if rxPort1 ~= txPort1 then
-		dev.config(txPort1, mempool1)
-	end
-	if rxPort2 ~= txPort2 then
-		dev.config(txPort2, mempool2)
-	end
-	if rxPort3 ~= txPort3 then
-		dev.config(txPort3, mempool3)
-	end
+	local isFwd1En = rxPort1 and txPort1
+	local isFwd2En = rxPort2 and txPort2
+	local isFwd3En = rxPort3 and txPort3
+	local mempool1
+	if isFwd1En then
+		mempool1 = memory.createMemPool(1024)
+		dev.config(rxPort1, mempool1)
+		if rxPort1 ~= txPort1 then
+			dev.config(txPort1, mempool1)
+		end
+	end	
+	local mempool2
+	if isFwd2En then
+		mempool2 = memory.createMemPool(1024)
+		dev.config(rxPort2, mempool2)
+		if rxPort2 ~= txPort2 then
+			dev.config(txPort2, mempool2)
+		end
+	end	
+	local mempool3
+	if isFwd3En then
+		mempool3 = memory.createMemPool(1024)
+		dev.config(rxPort3, mempool3)
+		if rxPort3 ~= txPort3 then
+			dev.config(txPort3, mempool3)
+		end
+	end	
 	dev.waitForLinks()
-	dpdk.launchLua("slave", rxPort1, txPort1, mempool1)
-	dpdk.launchLua("slave", rxPort2, txPort2, mempool2)
-	dpdk.launchLua("slave", rxPort3, txPort3, mempool3)
+	if isFwd1En then
+		dpdk.launchLua("slave", rxPort1, txPort1, mempool1)
+	end
+	if isFwd2En then
+		dpdk.launchLua("slave", rxPort2, txPort2, mempool2)
+	end
+	if isFwd3En then
+		dpdk.launchLua("slave", rxPort3, txPort3, mempool3)
+	end
 	dpdk.waitForSlaves()
 end
 
