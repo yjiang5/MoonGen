@@ -6,7 +6,7 @@ local timer		= require "timer"
 
 --memory.enableCache()
 
-PKT_SIZE = 128
+PKT_SIZE = 64
 
 -- TODO: this
 function master(port1, port2, port3)
