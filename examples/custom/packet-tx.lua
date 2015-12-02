@@ -37,16 +37,24 @@ end
 
 function loadSlave1(queue1)
 	local mem = memory.createMemPool(function(buf)
-		buf:getEthernetPacket():fill{
-			pktLength = PKT_SIZE,
+--		buf:getEthernetPacket():fill{
+--			pktLength = PKT_SIZE,
+--			ethSrc = "10:11:12:13:14:14",
+--			ethDst = "10:11:12:13:14:15",
+--		}
+		buf:getIPPacket():fill{
+			pktLength = len,
 			ethSrc = "10:11:12:13:14:14",
 			ethDst = "10:11:12:13:14:15",
+			ip4Src = "10.0.0.14",
+			ip4Dst = "10.0.0.15",
 		}
 	end)
 	bufs = mem:bufArray()
 	local ctr1 = stats:newDevTxCounter(queue1.dev, "plain")
 	while dpdk.running() do
 		bufs:alloc(PKT_SIZE)
+		bufs:offloadIPChecksums()
 		queue1:send(bufs)
 		ctr1:update()
 	end
@@ -58,17 +66,31 @@ end
 
 function loadSlave2(queue1, queue2)
 	local mem1 = memory.createMemPool(function(buf)
-		buf:getEthernetPacket():fill{
-			pktLength = PKT_SIZE,
+--		buf:getEthernetPacket():fill{
+--			pktLength = PKT_SIZE,
+--			ethSrc = "10:11:12:13:14:14",
+--			ethDst = "10:11:12:13:14:15",
+--		}
+		buf:getIPPacket():fill{
+			pktLength = len,
 			ethSrc = "10:11:12:13:14:14",
 			ethDst = "10:11:12:13:14:15",
+			ip4Src = "10.0.0.14",
+			ip4Dst = "10.0.0.15",
 		}
 	end)
 	local mem2 = memory.createMemPool(function(buf)
-		buf:getEthernetPacket():fill{
-			pktLength = PKT_SIZE,
+--		buf:getEthernetPacket():fill{
+--			pktLength = PKT_SIZE,
+--			ethSrc = "10:11:12:13:14:16",
+--			ethDst = "10:11:12:13:14:17",
+--		}
+		buf:getIPPacket():fill{
+			pktLength = len,
 			ethSrc = "10:11:12:13:14:16",
 			ethDst = "10:11:12:13:14:17",
+			ip4Src = "20.0.0.16",
+			ip4Dst = "20.0.0.17",
 		}
 	end)
 	bufs1 = mem1:bufArray()
@@ -77,9 +99,11 @@ function loadSlave2(queue1, queue2)
 	local ctr2 = stats:newDevTxCounter(queue2.dev, "plain")
 	while dpdk.running() do
 		bufs1:alloc(PKT_SIZE)
+		bufs1:offloadIPChecksums()
 		queue1:send(bufs1)
 		ctr1:update()
 		bufs2:alloc(PKT_SIZE)
+		bufs2:offloadIPChecksums()
 		queue2:send(bufs2)
 		ctr2:update()
 	end
@@ -93,26 +117,48 @@ end
 
 function loadSlave3(queue1, queue2, queue3)
 	local mem1 = memory.createMemPool(function(buf)
-		buf:getEthernetPacket():fill{
-			pktLength = PKT_SIZE,
+--		buf:getEthernetPacket():fill{
+--			pktLength = PKT_SIZE,
+--			ethSrc = "10:11:12:13:14:14",
+--			ethDst = "10:11:12:13:14:15",
+--		}
+		buf:getIPPacket():fill{
+			pktLength = len,
 			ethSrc = "10:11:12:13:14:14",
 			ethDst = "10:11:12:13:14:15",
+			ip4Src = "10.0.0.14",
+			ip4Dst = "10.0.0.15",
 		}
 	end)
 	local mem2 = memory.createMemPool(function(buf)
-		buf:getEthernetPacket():fill{
-			pktLength = PKT_SIZE,
+--		buf:getEthernetPacket():fill{
+--			pktLength = PKT_SIZE,
+--			ethSrc = "10:11:12:13:14:16",
+--			ethDst = "10:11:12:13:14:17",
+--		}
+		buf:getIPPacket():fill{
+			pktLength = len,
 			ethSrc = "10:11:12:13:14:16",
 			ethDst = "10:11:12:13:14:17",
+			ip4Src = "20.0.0.16",
+			ip4Dst = "20.0.0.17",
 		}
 	end)
 	local mem3 = memory.createMemPool(function(buf)
-		buf:getEthernetPacket():fill{
-			pktLength = PKT_SIZE,
+--		buf:getEthernetPacket():fill{
+--			pktLength = PKT_SIZE,
+--			ethSrc = "10:11:12:13:14:18",
+--			ethDst = "10:11:12:13:14:19",
+--		}
+		buf:getIPPacket():fill{
+			pktLength = len,
 			ethSrc = "10:11:12:13:14:18",
 			ethDst = "10:11:12:13:14:19",
+			ip4Src = "30.0.0.18",
+			ip4Dst = "30.0.0.19",
 		}
 	end)
+
 	bufs1 = mem1:bufArray()
 	bufs2 = mem2:bufArray()
 	bufs3 = mem3:bufArray()
@@ -121,12 +167,15 @@ function loadSlave3(queue1, queue2, queue3)
 	local ctr3 = stats:newDevTxCounter(queue3.dev, "plain")
 	while dpdk.running() do
 		bufs1:alloc(PKT_SIZE)
+		bufs1:offloadIPChecksums()
 		queue1:send(bufs1)
 		ctr1:update()
 		bufs2:alloc(PKT_SIZE)
+		bufs2:offloadIPChecksums()
 		queue2:send(bufs2)
 		ctr2:update()
 		bufs3:alloc(PKT_SIZE)
+		bufs3:offloadIPChecksums()
 		queue3:send(bufs3)
 		ctr3:update()
 	end
