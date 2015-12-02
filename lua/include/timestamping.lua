@@ -251,7 +251,6 @@ local function enableRxTimestampsI40e(port, queue, udpPort, id)
 	if udpPort ~= 0 then
 		device.get(port):l2Filter(udpPort, queue)
 	else
-		print("j")
 		device.get(port):l2Filter(ETH_TYPE_PTP, queue)
 	end
 	-- enable rx timestamping
