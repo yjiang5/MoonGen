@@ -19,7 +19,7 @@ function master(txPort, rxPort)
 end
 
 function runTest(txQueue, rxQueue)
-	local timestamper = ts:newTimestamper(txQueue, rxQueue)
+	local timestamper = ts:newUdpTimestamper(txQueue, rxQueue)
 	local hist = hist:new()
 	local runtime = timer:new(RUN_TIME)
 	while runtime:running() and dpdk.running() do
