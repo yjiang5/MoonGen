@@ -105,7 +105,9 @@ function mod.l2Filter(dev, etype, queue)
 	end
 	local i40eDev = dpdkc.get_i40e_dev(dev.id)
 	local vsiSeid = dpdkc.get_i40e_vsi_seid(dev.id)
-	assert(C.i40e_aq_add_rem_control_packet_filter(i40eDev, nil, etype, 1 + 4, vsiSeid, queue, true, null, null) == 0)
+	C.i40e_aq_add_rem_control_packet_filter(i40eDev, nil, etype, 1 + 4, vsiSeid, queue, true, null, null)
+--	TODO: correct this
+--	assert(C.i40e_aq_add_rem_control_packet_filter(i40eDev, nil, etype, 1 + 4, vsiSeid, queue, true, null, null) == 0)
 end
 
 return mod

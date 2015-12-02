@@ -248,10 +248,12 @@ local function enableRxTimestampsI40e(port, queue, udpPort, id)
 	dpdkc.read_reg32(port, PRTTSYN_RXTIME_L[3])
 	-- start the timer
 	startTimerI40e(port, id)
-	-- l2 rx filter
-	device.get(port):l2Filter(ETH_TYPE_PTP, queue)
-	-- L3 filter
-	-- TODO
+	if udpPort ~= 0 then
+		device.get(port):l2Filter(udpPort, queue)
+	else
+		print("j")
+		device.get(port):l2Filter(ETH_TYPE_PTP, queue)
+	end
 	-- enable rx timestamping
 	local val0 = dpdkc.read_reg32(port, PRTTSYN_CTL0)
 	dpdkc.write_reg32(port, PRTTSYN_CTL0, bit.bor(val0, PRTTSYN_CTL0_TSYNENA))
