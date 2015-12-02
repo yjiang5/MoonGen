@@ -57,22 +57,30 @@ function loadSlave1(queue1)
 end
 
 function loadSlave2(queue1, queue2)
-	local mem = memory.createMemPool(function(buf)
+	local mem1 = memory.createMemPool(function(buf)
 		buf:getEthernetPacket():fill{
 			pktLength = PKT_SIZE,
 			ethSrc = "10:11:12:13:14:14",
 			ethDst = "10:11:12:13:14:15",
 		}
 	end)
-	bufs = mem:bufArray()
+	local mem2 = memory.createMemPool(function(buf)
+		buf:getEthernetPacket():fill{
+			pktLength = PKT_SIZE,
+			ethSrc = "10:11:12:13:14:16",
+			ethDst = "10:11:12:13:14:17",
+		}
+	end)
+	bufs1 = mem1:bufArray()
+	bufs2 = mem2:bufArray()
 	local ctr1 = stats:newDevTxCounter(queue1.dev, "plain")
 	local ctr2 = stats:newDevTxCounter(queue2.dev, "plain")
 	while dpdk.running() do
-		bufs:alloc(PKT_SIZE)
-		queue1:send(bufs)
+		bufs1:alloc(PKT_SIZE)
+		queue1:send(bufs1)
 		ctr1:update()
-		bufs:alloc(PKT_SIZE)
-		queue2:send(bufs)
+		bufs2:alloc(PKT_SIZE)
+		queue2:send(bufs2)
 		ctr2:update()
 	end
 	ctr1:finalize()
@@ -84,26 +92,42 @@ function loadSlave2(queue1, queue2)
 end
 
 function loadSlave3(queue1, queue2, queue3)
-	local mem = memory.createMemPool(function(buf)
+	local mem1 = memory.createMemPool(function(buf)
 		buf:getEthernetPacket():fill{
 			pktLength = PKT_SIZE,
 			ethSrc = "10:11:12:13:14:14",
 			ethDst = "10:11:12:13:14:15",
 		}
 	end)
-	bufs = mem:bufArray()
+	local mem2 = memory.createMemPool(function(buf)
+		buf:getEthernetPacket():fill{
+			pktLength = PKT_SIZE,
+			ethSrc = "10:11:12:13:14:16",
+			ethDst = "10:11:12:13:14:17",
+		}
+	end)
+	local mem3 = memory.createMemPool(function(buf)
+		buf:getEthernetPacket():fill{
+			pktLength = PKT_SIZE,
+			ethSrc = "10:11:12:13:14:18",
+			ethDst = "10:11:12:13:14:19",
+		}
+	end)
+	bufs1 = mem1:bufArray()
+	bufs2 = mem2:bufArray()
+	bufs3 = mem3:bufArray()
 	local ctr1 = stats:newDevTxCounter(queue1.dev, "plain")
 	local ctr2 = stats:newDevTxCounter(queue2.dev, "plain")
 	local ctr3 = stats:newDevTxCounter(queue3.dev, "plain")
 	while dpdk.running() do
-		bufs:alloc(PKT_SIZE)
-		queue1:send(bufs)
+		bufs1:alloc(PKT_SIZE)
+		queue1:send(bufs1)
 		ctr1:update()
-		bufs:alloc(PKT_SIZE)
-		queue2:send(bufs)
+		bufs2:alloc(PKT_SIZE)
+		queue2:send(bufs2)
 		ctr2:update()
-		bufs:alloc(PKT_SIZE)
-		queue3:send(bufs)
+		bufs3:alloc(PKT_SIZE)
+		queue3:send(bufs3)
 		ctr3:update()
 	end
 	ctr1:finalize()
