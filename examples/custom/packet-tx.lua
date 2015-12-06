@@ -7,6 +7,7 @@ local timer		= require "timer"
 --memory.enableCache()
 
 PKT_SIZE = 64
+RUN_TIME = 60
 
 -- TODO: this
 function master(port1, port2, port3)
@@ -54,7 +55,8 @@ function loadSlave1(queue1)
 	bufs:alloc(PKT_SIZE)
 	bufs:offloadIPChecksums()
 	local ctr1 = stats:newDevTxCounter(queue1.dev, "plain")
-	while dpdk.running() do
+	local runtime = timer:new(RUN_TIME)
+	while runtime:running() and dpdk.running() do
 		queue1:send(bufs)
 		ctr1:update()
 	end
@@ -101,7 +103,8 @@ function loadSlave2(queue1, queue2)
 	bufs2:offloadIPChecksums()
 	local ctr1 = stats:newDevTxCounter(queue1.dev, "plain")
 	local ctr2 = stats:newDevTxCounter(queue2.dev, "plain")
-	while dpdk.running() do
+	local runtime = timer:new(RUN_TIME)
+	while runtime:running() and dpdk.running() do
 		queue1:send(bufs1)
 		ctr1:update()
 		queue2:send(bufs2)
@@ -171,7 +174,8 @@ function loadSlave3(queue1, queue2, queue3)
 	local ctr1 = stats:newDevTxCounter(queue1.dev, "plain")
 	local ctr2 = stats:newDevTxCounter(queue2.dev, "plain")
 	local ctr3 = stats:newDevTxCounter(queue3.dev, "plain")
-	while dpdk.running() do
+	local runtime = timer:new(RUN_TIME)
+	while runtime:running() and dpdk.running() do
 		queue1:send(bufs1)
 		ctr1:update()
 		queue2:send(bufs2)
