@@ -5,3 +5,6 @@
 doc/html/
 *.log
 .idea/
+.cproject
+
+.project
