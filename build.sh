@@ -21,7 +21,7 @@ then
 	echo "Please run git submodule update --init"
 	exit 1
 fi
-patch -p1 < ../../setup-scripts/patches/dpdk-config.patch
+patch -p1 -N < ../../setup-scripts/patches/dpdk-config.patch
 make -j 8 install T=x86_64-native-linuxapp-gcc
 cd ../../
 #./bind-interfaces.sh
