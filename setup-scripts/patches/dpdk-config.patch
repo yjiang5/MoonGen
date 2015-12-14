@@ -1,0 +1,12 @@
+diff --git a/config/common_linuxapp b/config/common_linuxapp
+index 0de43d5..de7c2de 100644
+--- a/config/common_linuxapp
++++ b/config/common_linuxapp
+@@ -140,7 +140,7 @@ CONFIG_RTE_LIBRTE_ETHER=y
+ CONFIG_RTE_LIBRTE_ETHDEV_DEBUG=n
+ CONFIG_RTE_MAX_ETHPORTS=32
+ CONFIG_RTE_MAX_QUEUES_PER_PORT=256
+-CONFIG_RTE_LIBRTE_IEEE1588=n
++CONFIG_RTE_LIBRTE_IEEE1588=y
+ CONFIG_RTE_ETHDEV_QUEUE_STAT_CNTRS=16
+ CONFIG_RTE_ETHDEV_RXTX_CALLBACKS=y
