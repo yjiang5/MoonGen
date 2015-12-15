@@ -496,7 +496,10 @@ function mod:newTimestamper(txQueue, rxQueue, mem, udp)
 		-- defaults are good enough for us here
 		if udp then
 			buf:getUdpPtpPacket():fill{
-				ethSrc = txQueue,
+				ethSrc = "10:11:12:13:14:14",
+        ethDst = "10:11:12:13:14:15",
+        ip4Src = "10.0.0.14",
+        ip4Dst = "10.0.0.15",
 			}
 		else
 			buf:getPtpPacket():fill{
