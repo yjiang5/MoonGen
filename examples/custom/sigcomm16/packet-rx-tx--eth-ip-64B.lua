@@ -9,7 +9,7 @@ local timer		= require "timer"
 PKT_SIZE = 64
 RX_RUN_TIME = 30
 RX_DELAY = 5
-TX_RUN_TIME = RX_RUN_TIME + RX_DELAY
+TX_RUN_TIME = RX_RUN_TIME + RX_DELAY + 5
 
 -- TODO: this
 function master(port1, port2, port3)
