@@ -26,17 +26,17 @@ function master(port1, port2, port3)
 	device.waitForLinks()
 	local tx_task, rx_task
 	if port1 and port2 and port3 then
-	  rx_task = dpdk.launchLua("rxSlave3", dev1:getRxQueue(0), dev2:getRxQueue(0), dev3:getRxQueue(0))
+	  tx_task = dpdk.launchLua("txSlave3", dev1:getTxQueue(0), dev2:getTxQueue(0), dev3:getTxQueue(0))
 	  dpdk.sleepMillis(5000) -- wait few ms to ensure rx threads are running
-		tx_task = dpdk.launchLua("txSlave3", dev1:getTxQueue(0), dev2:getTxQueue(0), dev3:getTxQueue(0))
+    rx_task = dpdk.launchLua("rxSlave3", dev1:getRxQueue(0), dev2:getRxQueue(0), dev3:getRxQueue(0))
 	elseif port1 and port2 then
+	  tx_task = dpdk.launchLua("txSlave2", dev1:getTxQueue(0), dev2:getTxQueue(0))
+	  dpdk.sleepMillis(5000) -- wait few ms to ensure rx threads are running
 	  rx_task = dpdk.launchLua("rxSlave2", dev1:getRxQueue(0), dev2:getRxQueue(0))
-	  dpdk.sleepMillis(5000) -- wait few ms to ensure rx threads are running
-		tx_task = dpdk.launchLua("txSlave2", dev1:getTxQueue(0), dev2:getTxQueue(0))
 	else
-	  rx_task = dpdk.launchLua("rxSlave1", dev1:getRxQueue(0))
+	  tx_task = dpdk.launchLua("txSlave1", dev1:getTxQueue(0))
 	  dpdk.sleepMillis(5000) -- wait few ms to ensure rx threads are running
-		tx_task = dpdk.launchLua("txSlave1", dev1:getTxQueue(0))
+	  rx_task = dpdk.launchLua("rxSlave1", dev1:getRxQueue(0))
 	end
 	local avg = rx_task:wait()
 	      avg = tx_task:wait()
