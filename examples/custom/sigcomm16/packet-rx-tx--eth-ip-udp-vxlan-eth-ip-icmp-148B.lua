@@ -7,7 +7,7 @@ local ffi     = require "ffi"
 
 --memory.enableCache()
 
-PKT_SIZE = 64
+PKT_SIZE = 148
 RX_RUN_TIME = 30
 RX_DELAY = 5
 TX_RUN_TIME = RX_RUN_TIME + RX_DELAY + 5
