@@ -7,7 +7,9 @@ local timer		= require "timer"
 --memory.enableCache()
 
 PKT_SIZE = 64
-RUN_TIME = 65
+RX_RUN_TIME = 30
+RX_DELAY = 5
+TX_RUN_TIME = RX_RUN_TIME + RX_DELAY
 
 -- TODO: this
 function master(port1, port2, port3)
@@ -27,15 +29,15 @@ function master(port1, port2, port3)
 	local tx_task, rx_task
 	if port1 and port2 and port3 then
 	  tx_task = dpdk.launchLua("txSlave3", dev1:getTxQueue(0), dev2:getTxQueue(0), dev3:getTxQueue(0))
-	  dpdk.sleepMillis(5000) -- wait few ms to ensure rx threads are running
+	  dpdk.sleepMillis(RX_DELAY*1000) -- wait few ms to ensure rx threads are running
     rx_task = dpdk.launchLua("rxSlave3", dev1:getRxQueue(0), dev2:getRxQueue(0), dev3:getRxQueue(0))
 	elseif port1 and port2 then
 	  tx_task = dpdk.launchLua("txSlave2", dev1:getTxQueue(0), dev2:getTxQueue(0))
-	  dpdk.sleepMillis(5000) -- wait few ms to ensure rx threads are running
+	  dpdk.sleepMillis(RX_DELAY*1000) -- wait few ms to ensure rx threads are running
 	  rx_task = dpdk.launchLua("rxSlave2", dev1:getRxQueue(0), dev2:getRxQueue(0))
 	else
 	  tx_task = dpdk.launchLua("txSlave1", dev1:getTxQueue(0))
-	  dpdk.sleepMillis(5000) -- wait few ms to ensure rx threads are running
+	  dpdk.sleepMillis(RX_DELAY*1000) -- wait few ms to ensure rx threads are running
 	  rx_task = dpdk.launchLua("rxSlave1", dev1:getRxQueue(0))
 	end
 	local avg = rx_task:wait()
@@ -54,7 +56,7 @@ end
 function rxSlave1(queue1)
   local bufs = memory.bufArray()
   local ctr1 = stats:newDevRxCounter(queue1.dev, "plain")
-  local runtime = timer:new(RUN_TIME)
+  local runtime = timer:new(RX_RUN_TIME)
   while runtime:running() and dpdk.running() do
     queue1:tryRecv(bufs, 10)
     bufs:freeAll()
@@ -74,7 +76,7 @@ function txSlave1(queue1)
 	bufs:alloc(PKT_SIZE)
 	bufs:offloadIPChecksums()
 	local ctr1 = stats:newDevTxCounter(queue1.dev, "plain")
-	local runtime = timer:new(RUN_TIME)
+	local runtime = timer:new(TX_RUN_TIME)
 	while runtime:running() and dpdk.running() do
 		queue1:send(bufs)
 		ctr1:update()
@@ -89,7 +91,7 @@ function rxSlave2(queue1, queue2)
   local bufs = memory.bufArray()
   local ctr1 = stats:newDevRxCounter(queue1.dev, "plain")
   local ctr2 = stats:newDevRxCounter(queue2.dev, "plain")
-  local runtime = timer:new(RUN_TIME)
+  local runtime = timer:new(RX_RUN_TIME)
   while runtime:running() and dpdk.running() do
     queue1:tryRecv(bufs, 10)
     bufs:freeAll()
@@ -121,7 +123,7 @@ function txSlave2(queue1, queue2)
 	bufs2:offloadIPChecksums()
 	local ctr1 = stats:newDevTxCounter(queue1.dev, "plain")
 	local ctr2 = stats:newDevTxCounter(queue2.dev, "plain")
-	local runtime = timer:new(RUN_TIME)
+	local runtime = timer:new(TX_RUN_TIME)
 	while runtime:running() and dpdk.running() do
 		queue1:send(bufs1)
 		ctr1:update()
@@ -141,7 +143,7 @@ function rxSlave3(queue1, queue2, queue3)
   local ctr1 = stats:newDevRxCounter(queue1.dev, "plain")
   local ctr2 = stats:newDevRxCounter(queue2.dev, "plain")
   local ctr3 = stats:newDevRxCounter(queue3.dev, "plain")
-  local runtime = timer:new(RUN_TIME)
+  local runtime = timer:new(RX_RUN_TIME)
   while runtime:running() and dpdk.running() do
     queue1:tryRecv(bufs, 10)
     bufs:freeAll()
@@ -185,7 +187,7 @@ function txSlave3(queue1, queue2, queue3)
 	local ctr1 = stats:newDevTxCounter(queue1.dev, "plain")
 	local ctr2 = stats:newDevTxCounter(queue2.dev, "plain")
 	local ctr3 = stats:newDevTxCounter(queue3.dev, "plain")
-	local runtime = timer:new(RUN_TIME)
+	local runtime = timer:new(TX_RUN_TIME)
 	while runtime:running() and dpdk.running() do
 		queue1:send(bufs1)
 		ctr1:update()
