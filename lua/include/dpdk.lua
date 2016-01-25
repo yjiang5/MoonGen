@@ -62,7 +62,7 @@ end
 local cores
 
 --- Inits DPDK. Called by MoonGen on startup.
-function mod.init()
+function mod.init(cfgfile, ...)
 	-- register drivers
 	dpdkc.register_pmd_drivers()
 	-- TODO: support arbitrary dpdk configurations by allowing configuration in the form ["cmdLine"] = "foo"
@@ -72,6 +72,12 @@ function mod.init()
 		"../lua/dpdk-conf.lua",
 		"/etc/moongen/dpdk-conf.lua"
 	}
+
+	-- Cfg passing through command line has higher priority
+	if cfgfile then
+		table.insert(cfgFileLocations, 1, cfgfile)
+	end
+
 	local cfg
 	for _, f in ipairs(cfgFileLocations) do
 		if fileExists(f) then
