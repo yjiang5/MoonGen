@@ -183,7 +183,8 @@ end
 function mod.tryReadRxTimestamp(port, timesync)
 	local id = device.get(port):getPciId()
 	if id == device.PCI_ID_X710 or id == device.PCI_ID_XL710 then
-		if bit.band(dpdkc.read_reg32(port, PRTTSYN_STAT_1), PRTTSYN_STAT_1_RXT0) == 0 then
+		local rtxindex=bit.lshift(1, timesync)
+		if bit.band(dpdkc.read_reg32(port, PRTTSYN_STAT_1), rtxindex) == 0 then
 			return nil
 		end
 		local low = dpdkc.read_reg32(port, PRTTSYN_RXTIME_L[timesync])
