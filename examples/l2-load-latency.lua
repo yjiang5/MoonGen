@@ -52,9 +52,9 @@ function master(...)
 		end
 	end
 	dpdk.launchLua("loadSlave", queues1, txDev, rxDev)
-	if rxPort ~= txPort then
-		dpdk.launchLua("loadSlave", queues2, rxDev, txDev)
-	end
+--	if rxPort ~= txPort then
+--		dpdk.launchLua("loadSlave", queues2, rxDev, txDev)
+--	end
 	dpdk.launchLua("timerSlave", txDev:getTxQueue(0), rxDev:getRxQueue(1), histfile)
 	dpdk.waitForSlaves()
 end
